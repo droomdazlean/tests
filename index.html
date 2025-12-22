@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biometric Authentication Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        
+        h2 {
+            color: #444;
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .step {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .step-label {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+        
+        .users-list {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .user-item {
+            padding: 8px;
+            background: white;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .fingerprint-icon {
+            font-size: 48px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        #nameSection {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Biometric Auth Demo</h1>
+        <p class="subtitle">Public key authentication using device biometrics</p>
+        
+        <!-- Registration Section -->
+        <div class="section">
+            <h2>📝 Register New User</h2>
+            
+            <div class="step">
+                <div class="step-label">Step 1: Scan Fingerprint</div>
+                <button id="btnScanRegister">🔍 Scan Your Fingerprint</button>
+            </div>
+            
+            <div id="nameSection" class="step">
+                <div class="step-label">Step 2: Enter Your Name</div>
+                <input type="text" id="txtName" placeholder="Enter your full name" />
+                <button id="btnCompleteRegister" style="margin-top: 10px;">✓ Complete Registration</button>
+            </div>
+        </div>
+        
+        <!-- Login Section -->
+        <div class="section">
+            <h2>🔓 Login</h2>
+            <button id="btnLogin">👆 Login with Fingerprint</button>
+        </div>
+        
+        <!-- Registered Users -->
+        <div class="section">
+            <h2>👥 Registered Users (<span id="userCount">0</span>)</h2>
+            <div id="usersList" class="users-list"></div>
+        </div>
+        
+        <div id="message" class="message"></div>
+    </div>
+
+    <script>
+        // In-memory storage (simulates database)
+        let registeredUsers = [];
+        let scannedPublicKey = '';
+
+        // Initialize
+        updateUsersList();
+
+        function showMessage(text, type = 'info') {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = `message ${type}`;
+            msg.style.display = 'block';
+            
+            setTimeout(() => {
+                msg.style.display = 'none';
+            }, 5000);
+        }
+
+        function arrayBufferToBase64(buffer) {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary);
+        }
+
+        function generateChallenge() {
+            const array = new Uint8Array(32);
+            crypto.getRandomValues(array);
+            return array;
+        }
+
+        function updateUsersList() {
+            const usersList = document.getElementById('usersList');
+            const userCount = document.getElementById('userCount');
+            
+            userCount.textContent = registeredUsers.length;
+            
+            if (registeredUsers.length === 0) {
+                usersList.innerHTML = '<div style="text-align: center; color: #999;">No users registered yet</div>';
+                return;
+            }
+            
+            usersList.innerHTML = registeredUsers.map((user, index) => 
+                `<div class="user-item">
+                    ${index + 1}. ${user.UserName} 
+                    <span style="color: #999; font-size: 12px;">(Key: ${user.PublicKey.substring(0, 20)}...)</span>
+                </div>`
+            ).join('');
+        }
+
+        // Check WebAuthn support
+        if (!window.PublicKeyCredential) {
+            showMessage('⚠️ Biometric authentication not supported on this device/browser', 'error');
+            document.getElementById('btnScanRegister').disabled = true;
+            document.getElementById('btnLogin').disabled = true;
+        }
+
+        // REGISTRATION STEP 1: Scan fingerprint
+        document.getElementById('btnScanRegister').addEventListener('click', async function() {
+            try {
+                const challenge = generateChallenge();
+                
+                const publicKeyOptions = {
+                    challenge: challenge,
+                    rp: {
+                        name: "BiometricDemo",
+                        id: window.location.hostname
+                    },
+                    user: {
+                        id: crypto.getRandomValues(new Uint8Array(16)),
+                        name: "user@demo.com",
+                        displayName: "Demo User"
+                    },
+                    pubKeyCredParams: [
+                        { type: "public-key", alg: -7 },
+                        { type: "public-key", alg: -257 }
+                    ],
+                    authenticatorSelection: {
+                        authenticatorAttachment: "platform",
+                        userVerification: "required"
+                    },
+                    timeout: 60000,
+                    attestation: "none"
+                };
+
+                showMessage('👆 Please scan your fingerprint on your device...', 'info');
+                
+                const credential = await navigator.credentials.create({
+                    publicKey: publicKeyOptions
+                });
+
+                // Extract and store the public key (credential ID)
+                scannedPublicKey = arrayBufferToBase64(credential.rawId);
+                
+                console.log('Public Key captured:', scannedPublicKey);
+                
+                showMessage('✓ Fingerprint scanned successfully! Now enter your name.', 'success');
+                document.getElementById('nameSection').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Registration error:', error);
+                if (error.name === 'NotAllowedError') {
+                    showMessage('❌ Fingerprint scan was cancelled', 'error');
+                } else {
+                    showMessage('❌ Error: ' + error.message, 'error');
+                }
+            }
+        });
+
+        // REGISTRATION STEP 2: Complete with name
+        document.getElementById('btnCompleteRegister').addEventListener('click', function() {
+            const name = document.getElementById('txtName').value.trim();
+            
+            if (!name) {
+                showMessage('❌ Please enter your name', 'error');
+                return;
+            }
+
+            if (!scannedPublicKey) {
+                showMessage('❌ Please scan your fingerprint first', 'error');
+                return;
+            }
+
+            // Check if user already exists
+            const userExists = registeredUsers.some(u => 
+                u.UserName.toLowerCase() === name.toLowerCase()
+            );
+            
+            if (userExists) {
+                showMessage('❌ User with this name already registered', 'error');
+                return;
+            }
+
+            // Check if fingerprint already registered
+            const keyExists = registeredUsers.some(u => u.PublicKey === scannedPublicKey);
+            
+            if (keyExists) {
+                showMessage('❌ This fingerprint is already registered', 'error');
+                return;
+            }
+
+            // Add to registered users
+            registeredUsers.push({
+                UserName: name,
+                PublicKey: scannedPublicKey
+            });
+
+            console.log('User registered:', { UserName: name, PublicKey: scannedPublicKey });
+            console.log('Total registered users:', registeredUsers);
+
+            showMessage(`✓ Registration successful! Welcome, ${name}!`, 'success');
+            
+            // Reset form
+            document.getElementById('txtName').value = '';
+            document.getElementById('nameSection').style.display = 'none';
+            scannedPublicKey = '';
+            
+            updateUsersList();
+        });
+
+        // LOGIN
+        document.getElementById('btnLogin').addEventListener('click', async function() {
+            if (registeredUsers.length === 0) {
+                showMessage('❌ No users registered yet. Please register first.', 'error');
+                return;
+            }
+
+            try {
+                const challenge = generateChallenge();
+                
+                const publicKeyOptions = {
+                    challenge: challenge,
+                    timeout: 60000,
+                    rpId: window.location.hostname,
+                    userVerification: "required"
+                };
+
+                showMessage('👆 Please scan your fingerprint to login...', 'info');
+                
+                const assertion = await navigator.credentials.get({
+                    publicKey: publicKeyOptions
+                });
+
+                // Get the public key from the assertion
+                const loginKey = arrayBufferToBase64(assertion.rawId);
+                
+                console.log('Login attempt with key:', loginKey);
+
+                // Find user by public key
+                const user = registeredUsers.find(u => u.PublicKey === loginKey);
+
+                if (user) {
+                    showMessage(`✓ Welcome back, ${user.UserName}! 🎉`, 'success');
+                    console.log('User logged in:', user);
+                } else {
+                    showMessage('❌ Fingerprint not recognized. Please register first.', 'error');
+                    console.log('No matching user found for key:', loginKey);
+                }
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                if (error.name === 'NotAllowedError') {
+                    showMessage('❌ Login was cancelled', 'error');
+                } else {
+                    showMessage('❌ Login failed: ' + error.message, 'error');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
