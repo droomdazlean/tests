@@ -1,34 +1,450 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Fingerprint Attendance (Local Demo)</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    button { margin: 5px 0; padding: 10px; }
-    select, input { padding: 8px; width: 250px; }
-    pre { background: #f4f4f4; padding: 10px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Employee Attendance System</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet">
+<style>
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; user-select: none; overscroll-behavior: none; padding: 10px; }
+.main-card { background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden; max-width: 500px; margin: 0 auto; }
+.header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 15px; text-align: center; }
+.header h1 { margin: 0; font-size: 22px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.header p { margin: 8px 0 0 0; opacity: 0.95; font-size: 12px; }
+.content-area { padding: 15px; min-height: 300px; }
+.search-box { position: relative; margin-bottom: 12px; }
+.search-box input { width: 100%; padding: 12px 40px 12px 45px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 15px; }
+.search-box input:focus { outline: none; border-color: #667eea; }
+.search-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #999; font-size: 18px; }
+.clear-search { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #999; font-size: 18px; cursor: pointer; display: none; }
+.alphabet-scroll { display: flex; gap: 4px; margin-bottom: 12px; overflow-x: auto; padding: 5px 0; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.alphabet-scroll::-webkit-scrollbar { display: none; }
+.alphabet-btn { min-width: 32px; height: 32px; border: 1px solid #ddd; background: white; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; flex-shrink: 0; }
+.alphabet-btn.active { background: #667eea; color: white; border-color: #667eea; }
+.employees-container { max-height: 450px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.employees-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 5px; }
+.employee-card { background: white; border: 2px solid transparent; border-radius: 10px; padding: 12px 8px; text-align: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: relative; }
+.employee-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: inherit; border-radius: 10px 10px 0 0; }
+.employee-avatar { width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-size: 18px; font-weight: 700; color: white; background: inherit; }
+.employee-name { font-size: 12px; font-weight: 600; color: #333; margin: 0; line-height: 1.2; word-break: break-word; }
+.employee-id { font-size: 10px; color: #999; margin-top: 2px; }
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+.modal.show { display: flex; align-items: center; justify-content: center; }
+.modal-content { background: white; border-radius: 16px; max-width: 400px; width: 90%; margin: 15px; max-height: 90vh; overflow-y: auto; }
+.modal-header { padding: 20px 20px 15px; border-bottom: 1px solid #e5e7eb; }
+.modal-header h5 { margin: 0; font-size: 18px; font-weight: 700; color: #333; }
+.modal-body { padding: 20px; }
+.modal-footer { padding: 15px 20px; border-top: 1px solid #e5e7eb; display: flex; gap: 10px; justify-content: flex-end; }
+.selected-employee { display: flex; align-items: center; gap: 12px; padding: 15px; background: #f8f9fa; border-radius: 10px; margin-bottom: 15px; }
+.selected-avatar { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: white; flex-shrink: 0; }
+.selected-info h6 { margin: 0; font-size: 15px; color: #333; }
+.selected-info p { margin: 2px 0 0 0; font-size: 12px; color: #999; }
+.method-card { border: 2px solid #e5e7eb; border-radius: 12px; padding: 20px; margin-bottom: 12px; cursor: pointer; text-align: center; transition: all 0.3s; }
+.method-card:hover { border-color: #667eea; background: #f8f9ff; }
+.method-card i { font-size: 40px; color: #667eea; margin-bottom: 10px; }
+.method-card h6 { margin: 0 0 5px 0; font-size: 16px; font-weight: 600; }
+.method-card p { margin: 0; font-size: 12px; color: #6b7280; }
+.btn { padding: 12px 20px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 14px; transition: all 0.3s; }
+.btn-primary { background: #667eea; color: white; }
+.btn-success { background: #10b981; color: white; }
+.btn-danger { background: #ef4444; color: white; }
+.btn-secondary { background: #6b7280; color: white; }
+.btn-outline { background: white; border: 2px solid #e5e7eb; color: #333; }
+.btn:active { transform: scale(0.98); }
+.btn-full { width: 100%; }
+.status-message { padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; font-weight: 500; }
+.status-message.info { background: #dbeafe; color: #1e40af; }
+.status-message.success { background: #d1fae5; color: #065f46; }
+.status-message.error { background: #fee2e2; color: #991b1b; }
+#patternGrid { display: grid; grid-template-columns: repeat(3, 70px); gap: 20px; justify-content: center; margin: 20px auto; touch-action: none; padding: 20px; }
+.pattern-dot { width: 50px; height: 50px; border-radius: 50%; background: #e5e7eb; border: 3px solid #d1d5db; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px; color: white; cursor: pointer; }
+.pattern-dot.active { background: #667eea; border-color: #667eea; transform: scale(1.1); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
+.record-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+.record-item:last-child { border-bottom: none; }
+.record-label { color: #6b7280; }
+.record-value { font-weight: 600; color: #333; }
+.empty-state { text-align: center; padding: 40px 20px; color: #6b7280; }
+.empty-state i { font-size: 48px; margin-bottom: 15px; opacity: 0.5; }
+.fingerprint-animation { text-align: center; padding: 30px; }
+.fingerprint-animation i { font-size: 80px; color: #667eea; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.1); } }
+</style>
 </head>
 <body>
+<div class="main-card">
+  <div class="header">
+    <h1><i class="bi bi-clock-history"></i> Attendance System</h1>
+    <p id="currentDateTime"></p>
+  </div>
+  <div class="content-area">
+    <div id="employeeSelection">
+      <div class="search-box">
+        <i class="bi bi-search search-icon"></i>
+        <input type="text" id="searchInput" placeholder="Search by name or ID...">
+        <button class="clear-search" id="clearSearch"><i class="bi bi-x-circle-fill"></i></button>
+      </div>
+      <div class="alphabet-scroll" id="alphabetFilter"></div>
+      <div class="employees-container">
+        <div class="employees-grid" id="employeesGrid"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
-<h2>Fingerprint Attendance System (No Backend)</h2>
+<div id="methodModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h5><i class="bi bi-shield-lock"></i> Choose Authentication Method</h5>
+    </div>
+    <div class="modal-body">
+      <div class="selected-employee" id="modalSelectedEmployee"></div>
+      <div class="method-card" onclick="selectMethod('pattern')">
+        <i class="bi bi-grid-3x3-gap"></i>
+        <h6>Pattern Lock</h6>
+        <p>Draw a pattern to authenticate</p>
+      </div>
+      <div class="method-card" onclick="selectMethod('biometric')">
+        <i class="bi bi-fingerprint"></i>
+        <h6>Biometric</h6>
+        <p>Use fingerprint authentication</p>
+      </div>
+    </div>
+  </div>
+</div>
 
-<h3>Register Employee</h3>
-<input id="regName" placeholder="Employee name" />
-<br />
-<button onclick="registerEmployee()">Register (Fingerprint)</button>
+<div id="actionModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h5 id="actionModalTitle">Action Required</h5>
+    </div>
+    <div class="modal-body">
+      <div class="selected-employee" id="actionSelectedEmployee"></div>
+      <div id="actionContent"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeActionModal()">Cancel</button>
+    </div>
+  </div>
+</div>
 
-<h3>Clock In / Out</h3>
-<select id="loginSelect"></select>
-<br />
-<button onclick="loginEmployee()">Clock In / Out (Fingerprint)</button>
-
-<h3>Stored Employees (LocalStorage)</h3>
-<pre id="output"></pre>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
 <script>
-/* ------------------ Utilities ------------------ */
+let employees = [];
+for (let i = 1; i <= 50; i++) {
+  const firstNames = ['James', 'Mary', 'John', 'Patricia', 'Robert', 'Jennifer', 'Michael', 'Linda', 'William', 'Barbara', 'David', 'Elizabeth', 'Richard', 'Susan', 'Joseph', 'Jessica', 'Thomas', 'Sarah', 'Charles', 'Karen', 'Christopher', 'Nancy', 'Daniel', 'Lisa', 'Matthew', 'Betty', 'Anthony', 'Margaret', 'Mark', 'Sandra', 'Donald', 'Ashley', 'Steven', 'Kimberly', 'Paul', 'Emily', 'Andrew', 'Donna', 'Joshua', 'Michelle', 'Kenneth', 'Dorothy', 'Kevin', 'Carol', 'Brian', 'Amanda', 'George', 'Melissa', 'Edward', 'Deborah'];
+  const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin', 'Lee', 'Perez', 'Thompson', 'White', 'Harris', 'Sanchez', 'Clark', 'Ramirez', 'Lewis', 'Robinson', 'Walker', 'Young', 'Allen', 'King', 'Wright', 'Scott', 'Torres', 'Nguyen', 'Hill', 'Flores', 'Green', 'Adams', 'Nelson', 'Baker', 'Hall', 'Rivera', 'Campbell', 'Mitchell', 'Carter', 'Roberts'];
+  employees.push({id: `EMP${String(i).padStart(4, '0')}`, name: `${firstNames[(i - 1) % 50]} ${lastNames[Math.floor((i - 1) / 50) % 50]}`});
+}
+
+function stringToColor(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  const hue = Math.abs(hash % 360);
+  const saturation = 65 + (Math.abs(hash) % 20);
+  const lightness = 50 + (Math.abs(hash >> 8) % 15);
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+}
+
+let selectedEmployee = null, filteredEmployees = [...employees], currentMode = '', tempPattern = [], drawing = false, pattern = [], lastPoint = null, dots = [], currentMethod = '';
+
+function init() {
+  updateDateTime();
+  setInterval(updateDateTime, 1000);
+  renderAlphabetFilter();
+  renderEmployees(employees);
+  initSearchListeners();
+}
+
+function updateDateTime() {
+  const now = new Date();
+  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+  document.getElementById('currentDateTime').textContent = now.toLocaleDateString('en-US', options);
+}
+
+function renderAlphabetFilter() {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const filter = document.getElementById('alphabetFilter');
+  const allBtn = document.createElement('button');
+  allBtn.className = 'alphabet-btn active';
+  allBtn.textContent = 'All';
+  allBtn.onclick = () => filterByLetter('all', allBtn);
+  filter.appendChild(allBtn);
+  alphabet.forEach(letter => {
+    const btn = document.createElement('button');
+    btn.className = 'alphabet-btn';
+    btn.textContent = letter;
+    btn.onclick = () => filterByLetter(letter, btn);
+    filter.appendChild(btn);
+  });
+}
+
+function filterByLetter(letter, btn) {
+  document.querySelectorAll('.alphabet-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filteredEmployees = letter === 'all' ? [...employees] : employees.filter(emp => emp.name.toUpperCase().startsWith(letter));
+  renderEmployees(filteredEmployees);
+}
+
+function initSearchListeners() {
+  const searchInput = document.getElementById('searchInput');
+  const clearBtn = document.getElementById('clearSearch');
+  searchInput.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase().trim();
+    clearBtn.style.display = query ? 'block' : 'none';
+    filteredEmployees = query ? employees.filter(emp => emp.name.toLowerCase().includes(query) || emp.id.toLowerCase().includes(query)) : [...employees];
+    renderEmployees(filteredEmployees);
+  });
+  clearBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    clearBtn.style.display = 'none';
+    filteredEmployees = [...employees];
+    renderEmployees(filteredEmployees);
+  });
+}
+
+function renderEmployees(employeeList) {
+  const grid = document.getElementById('employeesGrid');
+  if (employeeList.length === 0) {
+    grid.innerHTML = '<div class="empty-state"><i class="bi bi-person-x"></i><p>No employees found</p></div>';
+    return;
+  }
+  grid.innerHTML = employeeList.map(emp => {
+    const color = stringToColor(emp.id);
+    const initials = emp.name.split(' ').map(n => n[0]).join('');
+    return `<div class="employee-card" style="color: ${color};" onclick="selectEmployee('${emp.id}')"><div class="employee-avatar" style="background: ${color};">${initials}</div><p class="employee-name">${emp.name}</p><p class="employee-id">${emp.id}</p></div>`;
+  }).join('');
+}
+
+function selectEmployee(empId) {
+  selectedEmployee = employees.find(e => e.id === empId);
+  showMethodModal();
+}
+
+function showMethodModal() {
+  const color = stringToColor(selectedEmployee.id);
+  const initials = selectedEmployee.name.split(' ').map(n => n[0]).join('');
+  document.getElementById('modalSelectedEmployee').innerHTML = `<div class="selected-avatar" style="background: ${color};">${initials}</div><div class="selected-info"><h6>${selectedEmployee.name}</h6><p>${selectedEmployee.id}</p></div>`;
+  document.getElementById('methodModal').classList.add('show');
+}
+
+function selectMethod(method) {
+  currentMethod = method;
+  document.getElementById('methodModal').classList.remove('show');
+  checkEmployeeStatus();
+}
+
+function checkEmployeeStatus() {
+  const hasPattern = currentMethod === 'pattern' ? getStorage('pattern_' + selectedEmployee.id) : getStorage('biometric_' + selectedEmployee.id);
+  const lastAction = getStorage('lastAction_' + selectedEmployee.id);
+  const lastTime = getStorage('lastTime_' + selectedEmployee.id);
+  
+  const color = stringToColor(selectedEmployee.id);
+  const initials = selectedEmployee.name.split(' ').map(n => n[0]).join('');
+  const employeeHtml = `<div class="selected-avatar" style="background: ${color};">${initials}</div><div class="selected-info"><h6>${selectedEmployee.name}</h6><p>${selectedEmployee.id}</p></div>`;
+  
+  document.getElementById('actionSelectedEmployee').innerHTML = employeeHtml;
+  
+  if (!hasPattern) {
+    if (currentMethod === 'pattern') {
+      document.getElementById('actionModalTitle').textContent = 'Set Pattern';
+      document.getElementById('actionContent').innerHTML = '<div class="status-message info">Draw your pattern (minimum 4 dots)</div><div id="patternGrid"></div>';
+      document.getElementById('actionModal').classList.add('show');
+      initPatternGrid();
+      currentMode = 'set';
+    } else {
+      document.getElementById('actionModalTitle').textContent = 'Register Biometric';
+      document.getElementById('actionContent').innerHTML = '<div class="status-message info">Register your fingerprint to continue</div><button class="btn btn-primary btn-full" onclick="registerBiometric()"><i class="bi bi-fingerprint"></i> Register Fingerprint</button>';
+      document.getElementById('actionModal').classList.add('show');
+    }
+  } else {
+    const nextAction = lastAction === 'in' ? 'out' : 'in';
+    const actionColor = nextAction === 'in' ? 'btn-success' : 'btn-danger';
+    const actionIcon = nextAction === 'in' ? 'box-arrow-in-right' : 'box-arrow-right';
+    
+    let recordHtml = '';
+    if (lastTime) {
+      const date = new Date(parseInt(lastTime));
+      recordHtml = `<div style="background: #f8f9fa; border-radius: 10px; padding: 15px; margin-bottom: 15px;"><h6 style="margin: 0 0 10px 0; font-size: 14px;"><i class="bi bi-clock-history"></i> Last Activity</h6><div class="record-item"><span class="record-label">Action:</span><span class="record-value">${lastAction === 'in' ? 'Clocked IN' : 'Clocked OUT'}</span></div><div class="record-item"><span class="record-label">Time:</span><span class="record-value">${date.toLocaleString()}</span></div></div>`;
+    }
+    
+    if (currentMethod === 'pattern') {
+      document.getElementById('actionModalTitle').textContent = `Clock ${nextAction.toUpperCase()}`;
+      document.getElementById('actionContent').innerHTML = `<div class="status-message info">Draw your pattern to clock ${nextAction.toUpperCase()}</div><div id="patternGrid"></div><button class="btn btn-secondary btn-full" style="margin-top: 15px;" onclick="startResetPattern()"><i class="bi bi-arrow-clockwise"></i> Reset Pattern</button>${recordHtml}`;
+      document.getElementById('actionModal').classList.add('show');
+      initPatternGrid();
+      currentMode = `clock_${nextAction}`;
+    } else {
+      document.getElementById('actionModalTitle').textContent = `Clock ${nextAction.toUpperCase()}`;
+      document.getElementById('actionContent').innerHTML = `${recordHtml}<div class="status-message info">Use your fingerprint to clock ${nextAction.toUpperCase()}</div><button class="btn ${actionColor} btn-full" onclick="authenticateBiometric('${nextAction}')"><i class="bi bi-fingerprint"></i> Clock ${nextAction.toUpperCase()}</button><button class="btn btn-secondary btn-full" style="margin-top: 10px;" onclick="resetBiometric()"><i class="bi bi-arrow-clockwise"></i> Reset Biometric</button>`;
+      document.getElementById('actionModal').classList.add('show');
+    }
+  }
+}
+
+function closeActionModal() {
+  document.getElementById('actionModal').classList.remove('show');
+  selectedEmployee = null;
+  currentMode = '';
+  currentMethod = '';
+}
+
+function initPatternGrid() {
+  const grid = document.getElementById('patternGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  dots = [];
+  for (let i = 0; i < 9; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'pattern-dot';
+    dot.dataset.id = i;
+    grid.appendChild(dot);
+    dots.push(dot);
+  }
+  grid.addEventListener('pointerdown', handlePointerDown);
+  grid.addEventListener('pointermove', handlePointerMove);
+  grid.addEventListener('pointerup', handlePointerUp);
+}
+
+function handlePointerDown(e) {
+  if (!currentMode) return;
+  drawing = true;
+  lastPoint = getPoint(e);
+  clearGrid();
+  handleMovement(lastPoint, lastPoint);
+  e.target.setPointerCapture(e.pointerId);
+}
+
+function handlePointerMove(e) {
+  if (!drawing) return;
+  const current = getPoint(e);
+  handleMovement(lastPoint, current);
+  lastPoint = current;
+}
+
+function handlePointerUp(e) {
+  if (!drawing) return;
+  drawing = false;
+  e.target.releasePointerCapture(e.pointerId);
+  finishPattern();
+}
+
+function getPoint(e) {
+  return { x: e.clientX, y: e.clientY };
+}
+
+function handleMovement(p1, p2) {
+  dots.forEach(dot => {
+    if (dot.classList.contains('active')) return;
+    const rect = dot.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const radius = rect.width / 2;
+    if (lineIntersectsCircle(p1, p2, cx, cy, radius)) activateDot(dot);
+  });
+}
+
+function lineIntersectsCircle(p1, p2, cx, cy, r) {
+  const dx = p2.x - p1.x, dy = p2.y - p1.y, fx = p1.x - cx, fy = p1.y - cy;
+  const a = dx*dx + dy*dy, b = 2*(fx*dx + fy*dy), c = fx*fx + fy*fy - r*r;
+  let discriminant = b*b - 4*a*c;
+  if (discriminant < 0) return false;
+  discriminant = Math.sqrt(discriminant);
+  const t1 = (-b - discriminant) / (2*a), t2 = (-b + discriminant) / (2*a);
+  return (t1 >= 0 && t1 <= 1) || (t2 >= 0 && t2 <= 1);
+}
+
+function activateDot(dot) {
+  dot.classList.add('active');
+  pattern.push(dot.dataset.id);
+  dot.textContent = pattern.length;
+}
+
+function clearGrid() {
+  dots.forEach(d => { d.classList.remove('active'); d.textContent = ''; });
+  pattern = [];
+}
+
+function finishPattern() {
+  if (pattern.length < 4) {
+    showPatternStatus('Pattern too short! Use at least 4 dots', 'error');
+    clearGrid();
+    return;
+  }
+  const patternStr = pattern.join();
+  if (currentMode === 'set') {
+    tempPattern = [...pattern];
+    currentMode = 'confirm';
+    showPatternStatus('Confirm your pattern by drawing it again', 'info');
+    clearGrid();
+  } else if (currentMode === 'confirm') {
+    if (pattern.join() === tempPattern.join()) {
+      setStorage('pattern_' + selectedEmployee.id, hash(patternStr));
+      showPatternStatus('Pattern set successfully!', 'success');
+      setTimeout(() => {
+        closeActionModal();
+        selectEmployee(selectedEmployee.id);
+      }, 1500);
+    } else {
+      showPatternStatus('Patterns do not match! Try again', 'error');
+      currentMode = 'set';
+      setTimeout(() => showPatternStatus('Draw your pattern (minimum 4 dots)', 'info'), 2000);
+    }
+    clearGrid();
+  } else if (currentMode.startsWith('clock_')) {
+    const saved = getStorage('pattern_' + selectedEmployee.id);
+    if (saved === hash(patternStr)) {
+      const action = currentMode.split('_')[1];
+      const now = Date.now();
+      setStorage('lastAction_' + selectedEmployee.id, action);
+      setStorage('lastTime_' + selectedEmployee.id, now.toString());
+      showPatternStatus(`Successfully clocked ${action.toUpperCase()}!`, 'success');
+      setTimeout(() => {
+        closeActionModal();
+      }, 1500);
+    } else {
+      showPatternStatus('Incorrect pattern! Try again', 'error');
+    }
+    clearGrid();
+  } else if (currentMode === 'reset') {
+    const saved = getStorage('pattern_' + selectedEmployee.id);
+    if (saved === hash(patternStr)) {
+      removeStorage('pattern_' + selectedEmployee.id);
+      showPatternStatus('Pattern reset successfully!', 'success');
+      setTimeout(() => {
+        closeActionModal();
+        selectEmployee(selectedEmployee.id);
+      }, 1500);
+    } else {
+      showPatternStatus('Incorrect pattern!', 'error');
+    }
+    clearGrid();
+  }
+}
+
+function startResetPattern() {
+  currentMode = 'reset';
+  showPatternStatus('Draw your current pattern to reset it', 'info');
+  clearGrid();
+}
+
+function showPatternStatus(message, type) {
+  const statusDiv = document.querySelector('#actionContent .status-message');
+  if (statusDiv) {
+    statusDiv.textContent = message;
+    statusDiv.className = `status-message ${type}`;
+  }
+}
+
+function hash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = (h << 5) - h + str.charCodeAt(i);
+    h |= 0;
+  }
+  return h.toString();
+}
 
 function bufferToBase64(buffer) {
   return btoa(String.fromCharCode(...new Uint8Array(buffer)));
@@ -38,115 +454,146 @@ function base64ToBuffer(base64) {
   return Uint8Array.from(atob(base64), c => c.charCodeAt(0));
 }
 
-function loadEmployees() {
-  return JSON.parse(localStorage.getItem("employees") || "{}");
-}
-
-function saveEmployees(data) {
-  localStorage.setItem("employees", JSON.stringify(data));
-  refreshUI();
-}
-
-function refreshUI() {
-  const employees = loadEmployees();
-  const select = document.getElementById("loginSelect");
-  select.innerHTML = "";
-
-  Object.keys(employees).forEach(name => {
-    const opt = document.createElement("option");
-    opt.value = name;
-    opt.textContent = name;
-    select.appendChild(opt);
-  });
-
-  document.getElementById("output").textContent =
-    JSON.stringify(employees, null, 2);
-}
-
-/* ------------------ Registration ------------------ */
-
-async function registerEmployee() {
-  const name = document.getElementById("regName").value.trim();
-  if (!name) {
-    alert("Enter employee name");
-    return;
-  }
-
-  const employees = loadEmployees();
-  if (employees[name]) {
-    alert("Employee already registered");
-    return;
-  }
-
-  const challenge = crypto.getRandomValues(new Uint8Array(32));
-
-  const credential = await navigator.credentials.create({
-    publicKey: {
-      challenge,
-      rp: { name: "Attendance Demo" },
-      user: {
-        id: crypto.getRandomValues(new Uint8Array(16)),
-        name,
-        displayName: name
-      },
-      pubKeyCredParams: [{ type: "public-key", alg: -7 }],
-      authenticatorSelection: {
-        userVerification: "required"
-      },
-      timeout: 60000
-    }
-  });
-
-  const publicKey = credential.response.getPublicKey();
-  const credentialId = credential.rawId;
-
-  employees[name] = {
-    credentialId: bufferToBase64(credentialId),
-    publicKey: bufferToBase64(publicKey),
-    registeredAt: new Date().toISOString()
-  };
-
-  saveEmployees(employees);
-  alert(name + " registered successfully");
-}
-
-/* ------------------ Login ------------------ */
-
-async function loginEmployee() {
-  const name = document.getElementById("loginSelect").value;
-  if (!name) {
-    alert("Select employee");
-    return;
-  }
-
-  const employees = loadEmployees();
-  const emp = employees[name];
-
-  const challenge = crypto.getRandomValues(new Uint8Array(32));
-
+async function registerBiometric() {
+  const content = document.getElementById('actionContent');
+  content.innerHTML = '<div class="fingerprint-animation"><i class="bi bi-fingerprint"></i><p style="margin-top: 15px; color: #667eea; font-weight: 600;">Touch your fingerprint sensor...</p></div>';
+  
   try {
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    const credential = await navigator.credentials.create({
+      publicKey: {
+        challenge,
+        rp: { name: "Attendance System" },
+        user: {
+          id: crypto.getRandomValues(new Uint8Array(16)),
+          name: selectedEmployee.name,
+          displayName: selectedEmployee.name
+        },
+        pubKeyCredParams: [{ type: "public-key", alg: -7 }],
+        authenticatorSelection: { userVerification: "required" },
+        timeout: 60000
+      }
+    });
+    
+    const publicKey = credential.response.getPublicKey();
+    const credentialId = credential.rawId;
+    
+    const bioData = {
+      credentialId: bufferToBase64(credentialId),
+      publicKey: bufferToBase64(publicKey),
+      registeredAt: new Date().toISOString()
+    };
+    
+    setStorage('biometric_' + selectedEmployee.id, JSON.stringify(bioData));
+    content.innerHTML = '<div class="status-message success">Fingerprint registered successfully!</div>';
+    setTimeout(() => {
+      closeActionModal();
+      selectEmployee(selectedEmployee.id);
+    }, 1500);
+  } catch (err) {
+    content.innerHTML = '<div class="status-message error">Registration failed. Please try again.</div><button class="btn btn-primary btn-full" style="margin-top: 15px;" onclick="registerBiometric()"><i class="bi bi-fingerprint"></i> Try Again</button>';
+  }
+}
+
+async function authenticateBiometric(action) {
+  const content = document.getElementById('actionContent');
+  const bioDataStr = getStorage('biometric_' + selectedEmployee.id);
+  if (!bioDataStr) {
+    content.innerHTML = '<div class="status-message error">No biometric data found!</div>';
+    return;
+  }
+  
+  const bioData = JSON.parse(bioDataStr);
+  content.innerHTML = '<div class="fingerprint-animation"><i class="bi bi-fingerprint"></i><p style="margin-top: 15px; color: #667eea; font-weight: 600;">Touch your fingerprint sensor...</p></div>';
+  
+  try {
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
     const assertion = await navigator.credentials.get({
       publicKey: {
         challenge,
         allowCredentials: [{
           type: "public-key",
-          id: base64ToBuffer(emp.credentialId)
+          id: base64ToBuffer(bioData.credentialId)
         }],
         userVerification: "required",
         timeout: 60000
       }
     });
-
-    alert(name + " clocked in/out successfully ✅");
-
+    
+    const now = Date.now();
+    setStorage('lastAction_' + selectedEmployee.id, action);
+    setStorage('lastTime_' + selectedEmployee.id, now.toString());
+    content.innerHTML = `<div class="status-message success">Successfully clocked ${action.toUpperCase()}!</div>`;
+    setTimeout(() => {
+      closeActionModal();
+    }, 1500);
   } catch (err) {
-    alert("Authentication failed ❌");
+    content.innerHTML = '<div class="status-message error">Authentication failed. Please try again.</div><button class="btn btn-primary btn-full" style="margin-top: 15px;" onclick="authenticateBiometric(\'' + action + '\')"><i class="bi bi-fingerprint"></i> Try Again</button>';
   }
 }
 
-/* ------------------ Init ------------------ */
-refreshUI();
-</script>
+async function resetBiometric() {
+  const content = document.getElementById('actionContent');
+  const bioDataStr = getStorage('biometric_' + selectedEmployee.id);
+  if (!bioDataStr) {
+    content.innerHTML = '<div class="status-message error">No biometric data found!</div>';
+    return;
+  }
+  
+  const bioData = JSON.parse(bioDataStr);
+  content.innerHTML = '<div class="fingerprint-animation"><i class="bi bi-fingerprint"></i><p style="margin-top: 15px; color: #667eea; font-weight: 600;">Verify your fingerprint to reset...</p></div>';
+  
+  try {
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge,
+        allowCredentials: [{
+          type: "public-key",
+          id: base64ToBuffer(bioData.credentialId)
+        }],
+        userVerification: "required",
+        timeout: 60000
+      }
+    });
+    
+    removeStorage('biometric_' + selectedEmployee.id);
+    content.innerHTML = '<div class="status-message success">Biometric reset successfully!</div>';
+    setTimeout(() => {
+      closeActionModal();
+      selectEmployee(selectedEmployee.id);
+    }, 1500);
+  } catch (err) {
+    content.innerHTML = '<div class="status-message error">Authentication failed. Cannot reset.</div><button class="btn btn-secondary btn-full" style="margin-top: 15px;" onclick="resetBiometric()"><i class="bi bi-arrow-clockwise"></i> Try Again</button>';
+  }
+}
 
+function setStorage(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch (e) {
+    console.error('Storage error:', e);
+  }
+}
+
+function getStorage(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch (e) {
+    console.error('Storage error:', e);
+    return null;
+  }
+}
+
+function removeStorage(key) {
+  try {
+    localStorage.removeItem(key);
+  } catch (e) {
+    console.error('Storage error:', e);
+  }
+}
+
+init();
+</script>
 </body>
 </html>
